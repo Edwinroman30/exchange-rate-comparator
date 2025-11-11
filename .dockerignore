@@ -1,0 +1,59 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+publish/
+
+# Git
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Tests
+**/TestResults/
+**/*.trx
+
+# Documentation
+*.md
+LICENSE
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+**/tmp/
+**/.tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Coverage reports
+coverage*.xml
+coverage*.json
+*.coverage
