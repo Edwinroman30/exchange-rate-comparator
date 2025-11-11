@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Mock API Server - Provides test endpoints for the Console application
+  mock-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.mockapi
+    image: exchange-rate-comparator-mockapi:latest
+    container_name: exchange-rate-mock-api
+    ports:
+      - "5298:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health", "||", "exit", "1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - exchange-network
+
+  # Exchange Rate Comparator Console Application
+  exchange-rate-comparator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: exchange-rate-comparator:latest
+    container_name: exchange-rate-comparator
+    depends_on:
+      mock-api:
+        condition: service_healthy
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      # Configure to use the mock-api service
+      - ExchangeRateApis__Api1__BaseUrl=http://mock-api:8080/
+      - ExchangeRateApis__Api1__TimeoutSeconds=10
+      - ExchangeRateApis__Api1__Enabled=true
+      - ExchangeRateApis__Api2__BaseUrl=http://mock-api:8080/
+      - ExchangeRateApis__Api2__TimeoutSeconds=10
+      - ExchangeRateApis__Api2__Enabled=true
+      - ExchangeRateApis__Api3__BaseUrl=http://mock-api:8080/
+      - ExchangeRateApis__Api3__TimeoutSeconds=10
+      - ExchangeRateApis__Api3__Enabled=true
+    # Uncomment below to use your own external APIs instead of mock-api
+    # environment:
+    #   - ExchangeRateApis__Api1__BaseUrl=https://your-api1.example.com/
+    #   - ExchangeRateApis__Api2__BaseUrl=https://your-api2.example.com/
+    #   - ExchangeRateApis__Api3__BaseUrl=https://your-api3.example.com/
+    #   - ExchangeRateApis__Api1__TimeoutSeconds=15
+    #   - ExchangeRateApis__Api2__TimeoutSeconds=15
+    #   - ExchangeRateApis__Api3__TimeoutSeconds=15
+    restart: "no"
+    networks:
+      - exchange-network
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  exchange-network:
+    driver: bridge
