@@ -1,101 +1,14 @@
 ﻿using ExchangeRateComparator.Application.Interfaces;
-using ExchangeRateComparator.Application.Services;
-using ExchangeRateComparator.Console.Configuration;
+using ExchangeRateComparator.Console;
 using ExchangeRateComparator.Domain.Entities;
-using ExchangeRateComparator.Domain.Interfaces;
-using ExchangeRateComparator.Infrastructure.Adapters;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 // Build configuration
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production"}.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables()
-    .Build();
+var configuration = ServiceRegistration.BuildConfiguration();
 
-// Configure services
+// Configure services using extension method
 var services = new ServiceCollection();
-
-// Register configuration
-services.AddSingleton<IConfiguration>(configuration);
-
-// Configure options
-services.Configure<ExchangeRateApiSettings>(configuration.GetSection("ExchangeRateApis"));
-
-// Configure logging
-services.AddLogging(builder =>
-{
-    builder.AddConsole();
-    builder.SetMinimumLevel(LogLevel.Information);
-});
-
-// Configure HttpClient for each API adapter using configuration
-services.AddHttpClient<Api1JsonAdapter>((serviceProvider, client) =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (settings.Api1.Enabled)
-    {
-        client.BaseAddress = new Uri(settings.Api1.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(settings.Api1.TimeoutSeconds);
-    }
-});
-
-services.AddHttpClient<Api2XmlAdapter>((serviceProvider, client) =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (settings.Api2.Enabled)
-    {
-        client.BaseAddress = new Uri(settings.Api2.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(settings.Api2.TimeoutSeconds);
-    }
-});
-
-services.AddHttpClient<Api3JsonAdapter>((serviceProvider, client) =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (settings.Api3.Enabled)
-    {
-        client.BaseAddress = new Uri(settings.Api3.BaseUrl);
-        client.Timeout = TimeSpan.FromSeconds(settings.Api3.TimeoutSeconds);
-    }
-});
-
-// Register API providers conditionally based on configuration
-services.AddTransient<IExchangeRateProvider>(serviceProvider =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (!settings.Api1.Enabled)
-    {
-        throw new InvalidOperationException("Api1 is disabled in configuration.");
-    }
-    return serviceProvider.GetRequiredService<Api1JsonAdapter>();
-});
-
-services.AddTransient<IExchangeRateProvider>(serviceProvider =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (!settings.Api2.Enabled)
-    {
-        throw new InvalidOperationException("Api2 is disabled in configuration.");
-    }
-    return serviceProvider.GetRequiredService<Api2XmlAdapter>();
-});
-
-services.AddTransient<IExchangeRateProvider>(serviceProvider =>
-{
-    var settings = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<ExchangeRateApiSettings>>().Value;
-    if (!settings.Api3.Enabled)
-    {
-        throw new InvalidOperationException("Api3 is disabled in configuration.");
-    }
-    return serviceProvider.GetRequiredService<Api3JsonAdapter>();
-});
-
-// Register comparator service
-services.AddTransient<IExchangeRateComparatorService, ExchangeRateComparatorService>();
+services.AddExchangeRateServices(configuration);
 
 var serviceProvider = services.BuildServiceProvider();
 
