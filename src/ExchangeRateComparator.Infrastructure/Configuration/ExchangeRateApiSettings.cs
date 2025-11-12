@@ -1,10 +1,14 @@
-namespace ExchangeRateComparator.Console.Configuration;
+namespace ExchangeRateComparator.Infrastructure.Configuration;
 
 /// <summary>
-/// Configuration settings for exchange rate API providers
+/// Configuration settings for exchange rate API providers.
+/// Used with IOptions pattern for type-safe configuration access.
 /// </summary>
 public class ExchangeRateApiSettings
 {
+    /// <summary>
+    /// Configuration section name in appsettings.json
+    /// </summary>
     public const string SectionName = "ExchangeRateApis";
 
     /// <summary>
@@ -29,7 +33,7 @@ public class ExchangeRateApiSettings
 public class ApiEndpointSettings
 {
     /// <summary>
-    /// Base URL of the API
+    /// Base URL of the API (must end with /)
     /// </summary>
     public string BaseUrl { get; set; } = string.Empty;
 
