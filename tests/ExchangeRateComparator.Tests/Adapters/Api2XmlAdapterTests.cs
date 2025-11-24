@@ -1,8 +1,10 @@
 using System.Net;
 using ExchangeRateComparator.Domain.Entities;
 using ExchangeRateComparator.Infrastructure.Adapters;
+using ExchangeRateComparator.Infrastructure.Configuration;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using RichardSzalay.MockHttp;
 
@@ -17,6 +19,21 @@ public class Api2XmlAdapterTests
     {
         _loggerMock = new Mock<ILogger<Api2XmlAdapter>>();
         _mockHttp = new MockHttpMessageHandler();
+    }
+
+    private static IOptions<ExchangeRateApiSettings> CreateMockSettings(string endpointPath = "/api/exchange")
+    {
+        var settings = new ExchangeRateApiSettings
+        {
+            Api2 = new ApiEndpointSettings
+            {
+                BaseUrl = "http://localhost:5298/",
+                EndpointPath = endpointPath,
+                TimeoutSeconds = 10,
+                Enabled = true
+            }
+        };
+        return Options.Create(settings);
     }
 
     [Fact]
@@ -37,7 +54,7 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -63,7 +80,7 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -87,7 +104,7 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -111,7 +128,7 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -139,7 +156,7 @@ public class Api2XmlAdapterTests
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
         httpClient.Timeout = TimeSpan.FromMilliseconds(100);
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -173,7 +190,7 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api2.example.com/");
 
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -189,7 +206,7 @@ public class Api2XmlAdapterTests
     {
         // Arrange
         var httpClient = _mockHttp.ToHttpClient();
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act & Assert
         adapter.ProviderName.Should().Be("API2-XML");
@@ -199,7 +216,7 @@ public class Api2XmlAdapterTests
     public void Constructor_WhenHttpClientIsNull_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act = () => new Api2XmlAdapter(null!, _loggerMock.Object);
+        var act = () => new Api2XmlAdapter(null!, _loggerMock.Object, CreateMockSettings());
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -210,7 +227,18 @@ public class Api2XmlAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
 
         // Act & Assert
-        var act = () => new Api2XmlAdapter(httpClient, null!);
+        var act = () => new Api2XmlAdapter(httpClient, null!, CreateMockSettings());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_WhenSettingsIsNull_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var httpClient = _mockHttp.ToHttpClient();
+
+        // Act & Assert
+        var act = () => new Api2XmlAdapter(httpClient, _loggerMock.Object, null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -219,7 +247,7 @@ public class Api2XmlAdapterTests
     {
         // Arrange
         var httpClient = _mockHttp.ToHttpClient();
-        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api2XmlAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act & Assert
         var act = async () => await adapter.GetExchangeRateAsync(null!);

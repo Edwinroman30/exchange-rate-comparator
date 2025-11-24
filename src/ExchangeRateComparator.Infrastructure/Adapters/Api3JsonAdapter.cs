@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Text.Json;
 using ExchangeRateComparator.Domain.Entities;
 using ExchangeRateComparator.Domain.Interfaces;
+using ExchangeRateComparator.Infrastructure.Configuration;
 using ExchangeRateComparator.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ExchangeRateComparator.Infrastructure.Adapters;
 
@@ -14,16 +16,22 @@ public class Api3JsonAdapter : IExchangeRateProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<Api3JsonAdapter> _logger;
+    private readonly string _endpointPath;
 
     public string ProviderName => "API3-JSON";
 
-    public Api3JsonAdapter(HttpClient httpClient, ILogger<Api3JsonAdapter> logger)
+    public Api3JsonAdapter(
+        HttpClient httpClient, 
+        ILogger<Api3JsonAdapter> logger,
+        IOptions<ExchangeRateApiSettings> settings)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(settings);
 
         _httpClient = httpClient;
         _logger = logger;
+        _endpointPath = settings.Value.Api3.EndpointPath;
     }
 
     public async Task<ExchangeResult> GetExchangeRateAsync(ExchangeRequest request, CancellationToken cancellationToken = default)
@@ -47,9 +55,9 @@ public class Api3JsonAdapter : IExchangeRateProvider
             var json = JsonSerializer.Serialize(apiRequest);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-            _logger.LogDebug("Sending request to {Provider}", ProviderName);
+            _logger.LogDebug("Sending request to {Provider} at {EndpointPath}", ProviderName, _endpointPath);
 
-            var response = await _httpClient.PostAsync("/api/exchange", content, cancellationToken);
+            var response = await _httpClient.PostAsync(_endpointPath, content, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

@@ -67,14 +67,15 @@ public class ExchangeRateComparatorService : IExchangeRateComparatorService
             throw new InvalidOperationException("All exchange rate providers failed. Please try again later.");
         }
 
-        // Select the best result (highest converted amount)
+        // Select the best result (highest converted amount, then fastest execution time as tiebreaker)
         var bestResult = successfulResults
             .OrderByDescending(r => r.ConvertedAmount)
+            .ThenBy(r => r.ExecutionTimeMs)
             .First();
 
         _logger.LogInformation(
-            "Best rate found: {Rate} from {Provider} with converted amount {ConvertedAmount}",
-            bestResult.Rate, bestResult.ProviderName, bestResult.ConvertedAmount);
+            "Best rate found: {Rate} from {Provider} with converted amount {ConvertedAmount} (execution time: {ExecutionTimeMs}ms)",
+            bestResult.Rate, bestResult.ProviderName, bestResult.ConvertedAmount, bestResult.ExecutionTimeMs);
 
         return new ExchangeResponse
         {

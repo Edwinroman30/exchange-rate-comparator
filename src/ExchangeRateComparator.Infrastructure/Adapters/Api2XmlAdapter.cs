@@ -3,8 +3,10 @@ using System.Text;
 using System.Xml.Serialization;
 using ExchangeRateComparator.Domain.Entities;
 using ExchangeRateComparator.Domain.Interfaces;
+using ExchangeRateComparator.Infrastructure.Configuration;
 using ExchangeRateComparator.Infrastructure.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ExchangeRateComparator.Infrastructure.Adapters;
 
@@ -15,16 +17,22 @@ public class Api2XmlAdapter : IExchangeRateProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<Api2XmlAdapter> _logger;
+    private readonly string _endpointPath;
 
     public string ProviderName => "API2-XML";
 
-    public Api2XmlAdapter(HttpClient httpClient, ILogger<Api2XmlAdapter> logger)
+    public Api2XmlAdapter(
+        HttpClient httpClient, 
+        ILogger<Api2XmlAdapter> logger,
+        IOptions<ExchangeRateApiSettings> settings)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(settings);
 
         _httpClient = httpClient;
         _logger = logger;
+        _endpointPath = settings.Value.Api2.EndpointPath;
     }
 
     public async Task<ExchangeResult> GetExchangeRateAsync(ExchangeRequest request, CancellationToken cancellationToken = default)
@@ -45,9 +53,9 @@ public class Api2XmlAdapter : IExchangeRateProvider
             var xml = SerializeToXml(apiRequest);
             var content = new StringContent(xml, Encoding.UTF8, "application/xml");
 
-            _logger.LogDebug("Sending request to {Provider}", ProviderName);
+            _logger.LogDebug("Sending request to {Provider} at {EndpointPath}", ProviderName, _endpointPath);
 
-            var response = await _httpClient.PostAsync("/api/exchange", content, cancellationToken);
+            var response = await _httpClient.PostAsync(_endpointPath, content, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
