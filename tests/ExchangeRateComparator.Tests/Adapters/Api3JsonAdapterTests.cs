@@ -1,8 +1,10 @@
 using System.Net;
 using ExchangeRateComparator.Domain.Entities;
 using ExchangeRateComparator.Infrastructure.Adapters;
+using ExchangeRateComparator.Infrastructure.Configuration;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using RichardSzalay.MockHttp;
 
@@ -17,6 +19,21 @@ public class Api3JsonAdapterTests
     {
         _loggerMock = new Mock<ILogger<Api3JsonAdapter>>();
         _mockHttp = new MockHttpMessageHandler();
+    }
+
+    private static IOptions<ExchangeRateApiSettings> CreateMockSettings(string endpointPath = "/api/exchange")
+    {
+        var settings = new ExchangeRateApiSettings
+        {
+            Api3 = new ApiEndpointSettings
+            {
+                BaseUrl = "http://localhost:5298/",
+                EndpointPath = endpointPath,
+                TimeoutSeconds = 10,
+                Enabled = true
+            }
+        };
+        return Options.Create(settings);
     }
 
     [Fact]
@@ -40,7 +57,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -75,7 +92,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -99,7 +116,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -123,7 +140,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -147,7 +164,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -175,7 +192,7 @@ public class Api3JsonAdapterTests
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
         httpClient.Timeout = TimeSpan.FromMilliseconds(100);
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -212,7 +229,7 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
         httpClient.BaseAddress = new Uri("https://api3.example.com/");
 
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act
         var result = await adapter.GetExchangeRateAsync(request);
@@ -228,7 +245,7 @@ public class Api3JsonAdapterTests
     {
         // Arrange
         var httpClient = _mockHttp.ToHttpClient();
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act & Assert
         adapter.ProviderName.Should().Be("API3-JSON");
@@ -238,7 +255,7 @@ public class Api3JsonAdapterTests
     public void Constructor_WhenHttpClientIsNull_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act = () => new Api3JsonAdapter(null!, _loggerMock.Object);
+        var act = () => new Api3JsonAdapter(null!, _loggerMock.Object, CreateMockSettings());
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -249,7 +266,18 @@ public class Api3JsonAdapterTests
         var httpClient = _mockHttp.ToHttpClient();
 
         // Act & Assert
-        var act = () => new Api3JsonAdapter(httpClient, null!);
+        var act = () => new Api3JsonAdapter(httpClient, null!, CreateMockSettings());
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Constructor_WhenSettingsIsNull_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var httpClient = _mockHttp.ToHttpClient();
+
+        // Act & Assert
+        var act = () => new Api3JsonAdapter(httpClient, _loggerMock.Object, null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -258,7 +286,7 @@ public class Api3JsonAdapterTests
     {
         // Arrange
         var httpClient = _mockHttp.ToHttpClient();
-        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object);
+        var adapter = new Api3JsonAdapter(httpClient, _loggerMock.Object, CreateMockSettings());
 
         // Act & Assert
         var act = async () => await adapter.GetExchangeRateAsync(null!);

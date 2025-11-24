@@ -38,6 +38,11 @@ public class ApiEndpointSettings
     public string BaseUrl { get; set; } = string.Empty;
 
     /// <summary>
+    /// Relative endpoint path for the exchange rate API
+    /// </summary>
+    public string EndpointPath { get; set; } = "/api/exchange";
+
+    /// <summary>
     /// Timeout in seconds for API requests
     /// </summary>
     public int TimeoutSeconds { get; set; } = 10;
