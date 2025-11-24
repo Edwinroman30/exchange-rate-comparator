@@ -226,6 +226,37 @@ public class ExchangeRateComparatorServiceTests
         result.Provider.Should().Be("Provider3");
     }
 
+    [Fact]
+    public async Task GetBestExchangeRateAsync_WhenConvertedAmountsAreEqual_ShouldSelectFastestProvider()
+    {
+        // Arrange
+        var request = new ExchangeRequest("USD", "EUR", 1000M);
+
+        // All providers return same converted amount, but different execution times
+        _provider1Mock
+            .Setup(p => p.GetExchangeRateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExchangeResult.Success("Provider1", 0.85M, 850M, 150));
+
+        _provider2Mock
+            .Setup(p => p.GetExchangeRateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExchangeResult.Success("Provider2", 0.85M, 850M, 80));
+
+        _provider3Mock
+            .Setup(p => p.GetExchangeRateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ExchangeResult.Success("Provider3", 0.85M, 850M, 120));
+
+        var providers = new[] { _provider1Mock.Object, _provider2Mock.Object, _provider3Mock.Object };
+        var service = new ExchangeRateComparatorService(providers, _loggerMock.Object);
+
+        // Act
+        var result = await service.GetBestExchangeRateAsync(request);
+
+        // Assert
+        result.ConvertedAmount.Should().Be(850M);
+        result.BestRate.Should().Be(0.85M);
+        result.Provider.Should().Be("Provider2", "it has the fastest execution time (80ms)");
+    }
+
     [Theory]
     [InlineData(null, "EUR", 1000)]
     [InlineData("", "EUR", 1000)]
